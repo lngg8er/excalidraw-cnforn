@@ -1,3 +1,12 @@
+/**
+ * DON'T depend on anything from the outside like `promiseTry`, as this module is part of a separate lazy-loaded chunk.
+ *
+ * Including anything from the main chunk would include the whole chunk by default.
+ * Even it it would be tree-shaken during build, it won't be tree-shaken in dev.
+ *
+ * In the future consider separating common utils into a separate shared chunk.
+ */
+
 import loadWoff2 from "../wasm/woff2.loader";
 import loadHbSubset from "../wasm/hb-subset.loader";
 
@@ -38,19 +47,19 @@ export const subsetToBinary = async (
   codePoints: Array<number>,
 ): Promise<ArrayBuffer> => {
   // lazy loaded wasm modules to avoid multiple initializations in case of concurrent triggers
-  // IMPORTANT: could be expensive, as each new worker instance lazy loads these to their own memory - keep the # of workes small
+  // IMPORTANT: could be expensive, as each new worker instance lazy loads these to their own memory ~ keep the # of workes small!
   const { compress, decompress } = await loadWoff2();
   const { subset } = await loadHbSubset();
 
   const decompressedBinary = decompress(arrayBuffer).buffer;
-  const subsetSnft = subset(decompressedBinary, new Set(codePoints));
-  const compressedBinary = compress(subsetSnft.buffer);
+  const snftSubset = subset(decompressedBinary, new Set(codePoints));
+  const compressedBinary = compress(snftSubset.buffer);
 
   return compressedBinary.buffer;
 };
 
 /**
- * Util for isomoprhic browser (main thread) and node, jsdom usage.
+ * Util for isomoprhic browser (main thread), node and jsdom usage.
  *
  * Isn't used inside the worker to avoid copying large binary strings (as dataurl) between worker threads and the main thread.
  */
@@ -62,7 +71,7 @@ export const toBase64 = async (arrayBuffer: ArrayBuffer) => {
     base64 = Buffer.from(arrayBuffer).toString("base64");
   } else {
     // browser (main thread)
-    //it's perfectly fine to treat each byte independently,
+    // it's perfectly fine to treat each byte independently,
     // as we care only about turning individual bytes into codepoints,
     // not about multi-byte unicode characters
     const byteString = String.fromCharCode(...new Uint8Array(arrayBuffer));

@@ -14,6 +14,7 @@ import {
   distance,
   getFontString,
   PromisePool,
+  promiseTry,
   toBrandedType,
 } from "../utils";
 import type { AppState, BinaryFiles } from "../types";
@@ -364,13 +365,13 @@ export const exportToSvg = async (
   }
 
   const fontFaces = opts?.skipInliningFonts ? [] : await getFontFaces(elements);
+  const delimiter = "\n\t\t";
 
   svgRoot.innerHTML = `
   ${SVG_EXPORT_TAG}
   ${metadata}
   <defs>
-    <style class="style-fonts">
-      ${fontFaces.join("\n")}
+    <style class="style-fonts">${delimiter}${fontFaces.join(delimiter)}
     </style>
     ${exportingFrameClipPath}
   </defs>
@@ -492,7 +493,7 @@ function* fontFacesIterator(
   families: Set<number>,
   characters: string,
   codePoints: Array<number>,
-): Generator<Promise<[number, string]>> {
+): Generator<Promise<void | readonly [number, string]>> {
   // the order between the families is important, as fallbacks need to be defined first and in the reversed order
   // so that they get overriden with the later defined font faces, i.e. in case they share some codepoints
   const reversedFallbacks = Array.from(FONT_FAMILY_FALLBACKS.ARRAY).reverse();
@@ -520,7 +521,7 @@ function* fontFacesIterator(
     let fontFamilyOrder: number;
 
     if (fallbackIndex !== -1) {
-      // making sure the fallback fonts are defined first
+      // making sure the fallback fonts are defined first, so that they don't override default fonts
       fontFamilyOrder = fallbackIndex;
     } else {
       // making sure the built-in font faces are always defined after fallback fonts
@@ -531,16 +532,24 @@ function* fontFacesIterator(
     fontFamilyOrder *= 10_000;
 
     for (const [fontFaceIndex, fontFace] of fontFaces.entries()) {
-      const pendingFontFace = fontFace.toCSS(characters, codePoints);
+      yield promiseTry(async () => {
+        const fontFaceCSS = await fontFace.toCSS(characters, codePoints);
 
-      // so that we don't add undefined to the pool
-      if (pendingFontFace) {
+        if (!fontFaceCSS) {
+          return;
+        }
+
         const fontFaceOrder = fontFamilyOrder + fontFaceIndex;
-        yield new Promise(async (resolve) => {
-          const fontFaceCSS = await pendingFontFace;
-          resolve([fontFaceOrder, fontFaceCSS]);
-        });
-      }
+        const fontFaceTuple = [fontFaceOrder, fontFaceCSS] as const;
+
+        return fontFaceTuple;
+      }).catch((error) => {
+        // handle all types of sync/async errors and just yield undefined
+        console.error(
+          `Couldn't transform font-face to css for family "${fontFace.fontFace.family}"`,
+          error,
+        );
+      });
     }
   }
 }

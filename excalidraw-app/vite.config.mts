@@ -25,7 +25,7 @@ export default defineConfig({
       output: {
         assetFileNames(chunkInfo) {
           if (chunkInfo?.name?.endsWith(".woff2")) {
-            // TODO: include subfolder in the names, thing about splitting also other fonts (and thus skipping hash
+            // TODO_CHINESE: include subfolder in the names
             if (chunkInfo.name.includes("Xiaolai")) {
               return "[name][extname]";
             } else {
@@ -78,8 +78,8 @@ export default defineConfig({
       },
 
       workbox: {
-        // Don't push fonts, locales and wasm to app precache
-        globIgnores: ["fonts.css", "**/locales/**", "service-worker.js", "**/*.wasm-*.js"],
+        // don't precache fonts, locales and shared chunks 
+        globIgnores: ["fonts.css", "**/locales/**", "service-worker.js", "**/*.shared-*.js"],
         runtimeCaching: [
           {
             urlPattern: new RegExp("/.+.(ttf|woff2|otf)"),
@@ -114,10 +114,10 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: new RegExp(".wasm-.+.js"),
+            urlPattern: new RegExp(".shared-.+.js"),
             handler: "CacheFirst",
             options: {
-              cacheName: "wasm",
+              cacheName: "shared",
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 90, // <== 90 days

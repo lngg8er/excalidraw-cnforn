@@ -1187,7 +1187,7 @@ export class PromisePool<T> {
   private readonly entries: Record<number, T> = {};
 
   constructor(
-    source: IterableIterator<Promise<[number, T]>>,
+    source: IterableIterator<Promise<void | readonly [number, T]>>,
     concurrency: number,
   ) {
     this.pool = new Pool(
@@ -1197,13 +1197,20 @@ export class PromisePool<T> {
   }
 
   public all() {
-    const listener = this.pool.addEventListener("fulfilled", (event) => {
-      const [index, value] = event.data.result;
-      this.entries[index] = value;
-    });
+    const listener = (event: { data: { result: void | [number, T] } }) => {
+      if (event.data.result) {
+        const [index, value] = event.data.result;
+        this.entries[index] = value;
+      }
+    };
+
+    this.pool.addEventListener("fulfilled", listener);
 
     return this.pool.start().then(() => {
-      setTimeout(() => this.pool.removeEventListener("fulfilled", listener));
+      setTimeout(() => {
+        this.pool.removeEventListener("fulfilled", listener);
+      });
+
       return Object.values(this.entries);
     });
   }

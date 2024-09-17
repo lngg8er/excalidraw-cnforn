@@ -1,10 +1,12 @@
+import { promiseTry } from "../../utils";
 import { WorkerPool } from "../../workers";
 import type { Commands } from "./subset.shared";
 
+// lazy-loaded and cached chunks
 let subsetWorker: Promise<typeof import("./subset.worker")> | null = null;
 let subsetShared: Promise<typeof import("./subset.shared")> | null = null;
 
-const loadWorkerSubsetChunk = async () => {
+const lazyLoadWorkerSubsetChunk = async () => {
   if (!subsetWorker) {
     subsetWorker = import("./subset.worker");
   }
@@ -12,41 +14,45 @@ const loadWorkerSubsetChunk = async () => {
   return subsetWorker;
 };
 
-const loadSharedSubsetChunk = async () => {
+const lazyLoadSharedSubsetChunk = async () => {
   if (!subsetShared) {
-    // load dynamically to force create a shared chunk between main thread and the worker thread
+    // load dynamically to force create a shared chunk reused between main thread and the worker thread
     subsetShared = import("./subset.shared");
   }
 
   return subsetShared;
 };
 
+// TODO_CHINESE: consider having this configurable (i.e. in case someone bundles whole thing into one chunk, including the worker code, it likely won't work)
 let shouldUseWorkers = typeof Worker !== "undefined";
 
 // TODO: could be extended with multiple commands in the future
-type WorkerData = { command: typeof Commands.Subset; arrayBuffer: ArrayBuffer };
+type SubsetWorkerData = {
+  command: typeof Commands.Subset;
+  arrayBuffer: ArrayBuffer;
+};
 
-type WorkerResult<T extends WorkerData["command"]> =
+type SubsetWorkerResult<T extends SubsetWorkerData["command"]> =
   T extends typeof Commands.Subset ? ArrayBuffer : never;
 
 let workerPool: Promise<
-  WorkerPool<WorkerData, WorkerResult<WorkerData["command"]>>
+  WorkerPool<SubsetWorkerData, SubsetWorkerResult<SubsetWorkerData["command"]>>
 > | null = null;
 
-const getWorkerPool = (codePoints: Array<number>) => {
+const getOrCreateWorkerPool = (codePoints: Array<number>) => {
   if (!workerPool) {
-    // immediate concurrency-friendly return, to ensure we have only one pool instance
+    // immediate concurrent-friendly return, to ensure we have only one pool instance
     workerPool = new Promise(async (resolve, reject) => {
       try {
-        const { WorkerUrl } = await loadWorkerSubsetChunk();
-        const { Commands } = await loadSharedSubsetChunk();
+        const { WorkerUrl } = await lazyLoadWorkerSubsetChunk();
+        const { Commands } = await lazyLoadSharedSubsetChunk();
 
         const pool = new WorkerPool<
-          WorkerData,
-          WorkerResult<WorkerData["command"]>
+          SubsetWorkerData,
+          SubsetWorkerResult<SubsetWorkerData["command"]>
         >(WorkerUrl, {
           initWorker: (worker: Worker) => {
-            // initialize the newly create worker with codepoints
+            // initialize the newly created worker with codepoints
             worker.postMessage({ command: Commands.Init, codePoints });
           },
         });
@@ -76,30 +82,39 @@ export const subsetWoff2GlyphsByCodepoints = async (
   arrayBuffer: ArrayBuffer,
   codePoints: Array<number>,
 ): Promise<string> => {
-  const { Commands, subsetToBase64, toBase64 } = await loadSharedSubsetChunk();
+  const { Commands, subsetToBase64, toBase64 } =
+    await lazyLoadSharedSubsetChunk();
 
   if (shouldUseWorkers) {
-    return new Promise(async (resolve) => {
+    return promiseTry(async () => {
       try {
-        // lazy initialize the worker pool
-        const workerPool = await getWorkerPool(codePoints);
+        // lazy initialize or get the worker pool singleton
+        const workerPool = await getOrCreateWorkerPool(codePoints);
+        // copy the buffer to avoid working on top of the detached array buffer in the fallback
+        // i.e. in case the worker throws, the array buffer does not get automatically detached, even if the worker is terminated
+        const arrayBufferCopy = arrayBuffer.slice(0);
         // takes idle worker from the pool or creates a new one
         const result = await workerPool.postMessage(
           {
             command: Commands.Subset,
-            arrayBuffer,
+            arrayBuffer: arrayBufferCopy,
           } as const,
-          { transfer: [arrayBuffer] },
+          { transfer: [arrayBufferCopy] },
         );
 
         // encode on the main thread to avoid copying large binary strings (as dataurl) between threads
-        resolve(toBase64(result));
+        return toBase64(result);
       } catch (e) {
         // don't use workers if they are failing
         shouldUseWorkers = false;
+        // eslint-disable-next-line no-console
+        console.debug(
+          "Failed to use workers for subsetting, falling back to the main thread.",
+          e,
+        );
 
         // fallback to the main thread
-        resolve(subsetToBase64(arrayBuffer, codePoints));
+        return subsetToBase64(arrayBuffer, codePoints);
       }
     });
   }

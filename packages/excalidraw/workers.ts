@@ -7,8 +7,10 @@ class IdleWorker extends Worker {
     super(workerUrl, { type: "module" });
   }
 
-  /** use to prolong the worker's life or terminate it with a flush immediately */
-  public resetTTL!: ReturnType<typeof debounce>;
+  /**
+   * Use to prolong the worker's life by `workerTTL` or terminate it with a flush immediately.
+   */
+  public debounceTerminate!: ReturnType<typeof debounce>;
 }
 
 /**
@@ -56,13 +58,18 @@ export class WorkerPool<T, R> {
       worker.onerror = this.onErrorHandler(worker, reject);
 
       worker.postMessage(data, options);
-      worker.resetTTL(reject);
+      worker.debounceTerminate(() =>
+        reject(
+          new Error(`Active worker did not respond for ${this.workerTTL}ms!`),
+        ),
+      );
     });
   }
 
+  // TODO_CHINESE: use somewhere or delete
   public async clear() {
     for (const worker of this.idleWorkers) {
-      worker.resetTTL.cancel();
+      worker.debounceTerminate.cancel();
       worker.terminate();
     }
 
@@ -75,7 +82,7 @@ export class WorkerPool<T, R> {
   private async createWorker(): Promise<IdleWorker> {
     const worker = new IdleWorker(this.workerUrl);
 
-    worker.resetTTL = debounce((reject?: (reason?: unknown) => void) => {
+    worker.debounceTerminate = debounce((reject?: () => void) => {
       worker.terminate();
 
       if (this.idleWorkers.has(worker)) {
@@ -84,7 +91,9 @@ export class WorkerPool<T, R> {
         // eslint-disable-next-line no-console
         console.debug("Idle worker has been released from the pool.");
       } else if (reject) {
-        reject("Active worker's time-to-live expired!");
+        reject();
+      } else {
+        console.error("Active worker has been terminated!");
       }
     }, this.workerTTL);
 
@@ -95,7 +104,7 @@ export class WorkerPool<T, R> {
 
   private onMessageHandler(worker: IdleWorker, resolve: (value: R) => void) {
     return (e: { data: R }) => {
-      worker.resetTTL();
+      worker.debounceTerminate();
       this.idleWorkers.add(worker);
       resolve(e.data);
     };
@@ -103,11 +112,12 @@ export class WorkerPool<T, R> {
 
   private onErrorHandler(
     worker: IdleWorker,
-    reject: (reason?: unknown) => void,
+    reject: (reason: ErrorEvent) => void,
   ) {
     return (e: ErrorEvent) => {
-      worker.resetTTL.flush();
-      reject(e);
+      // terminate the worker immediately before rejection
+      worker.debounceTerminate(() => reject(e));
+      worker.debounceTerminate.flush();
     };
   }
 }
