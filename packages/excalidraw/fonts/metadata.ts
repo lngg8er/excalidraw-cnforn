@@ -4,7 +4,7 @@ import {
   FontFamilyNormalIcon,
   FreedrawIcon,
 } from "../components/icons";
-import { FONT_FAMILY } from "../constants";
+import { FONT_FAMILY, FONT_FAMILY_FALLBACKS } from "../constants";
 
 /**
  * Encapsulates font metrics with additional font metadata.
@@ -110,7 +110,7 @@ export const FONT_METADATA: Record<number, FontMetadata> = {
     },
     serverSide: true,
   },
-  [FONT_FAMILY.Xiaolai]: {
+  [FONT_FAMILY_FALLBACKS.Xiaolai]: {
     metrics: {
       unitsPerEm: 1000,
       ascender: 880,
@@ -119,7 +119,7 @@ export const FONT_METADATA: Record<number, FontMetadata> = {
     },
     fallback: true,
   },
-  [FONT_FAMILY["Segoe UI Emoji"]]: {
+  [FONT_FAMILY_FALLBACKS["Segoe UI Emoji"]]: {
     metrics: {
       // reusing Excalifont metrics
       unitsPerEm: 1000,

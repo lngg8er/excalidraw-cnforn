@@ -8,7 +8,7 @@ import type {
 import { ShapeCache } from "../scene/ShapeCache";
 import { isTextElement } from "../element";
 import { getFontString } from "../utils";
-import { FONT_FAMILY } from "../constants";
+import { FONT_FAMILY, FONT_FAMILY_FALLBACKS } from "../constants";
 import { FONT_METADATA, type FontMetadata } from "./metadata";
 import { getContainerElement } from "../element/textElement";
 import {
@@ -198,16 +198,20 @@ export class Fonts {
   private static init() {
     const fonts = {
       registered: new Map<
-        ValueOf<typeof FONT_FAMILY>,
+        ValueOf<typeof FONT_FAMILY | typeof FONT_FAMILY_FALLBACKS>,
         { metadata: FontMetadata; fontFaces: IExcalidrawFontFace[] }
       >(),
     };
 
     const init = (
-      family: keyof typeof FONT_FAMILY,
+      family: keyof typeof FONT_FAMILY | keyof typeof FONT_FAMILY_FALLBACKS,
       ...fontFacesDescriptors: ExcalidrawFontFaceDescriptor[]
     ) => {
-      const metadata = FONT_METADATA[FONT_FAMILY[family]];
+      const fontFamily =
+        FONT_FAMILY[family as keyof typeof FONT_FAMILY] ??
+        FONT_FAMILY_FALLBACKS[family as keyof typeof FONT_FAMILY_FALLBACKS];
+
+      const metadata = FONT_METADATA[fontFamily];
 
       register.call(fonts, family, metadata, ...fontFacesDescriptors);
     };
@@ -258,7 +262,7 @@ function register(
     | Fonts
     | {
         registered: Map<
-          ValueOf<typeof FONT_FAMILY>,
+          number,
           { metadata: FontMetadata; fontFaces: IExcalidrawFontFace[] }
         >;
       },
@@ -266,12 +270,15 @@ function register(
   metadata: FontMetadata,
   ...fontFacesDecriptors: ExcalidrawFontFaceDescriptor[]
 ) {
-  // TODO: likely we will need to abandon number "id" in order to support custom fonts
-  const familyId = FONT_FAMILY[family as keyof typeof FONT_FAMILY];
-  const registeredFamily = this.registered.get(familyId);
+  // TODO: likely we will need to abandon number value in order to support custom fonts
+  const fontFamily =
+    FONT_FAMILY[family as keyof typeof FONT_FAMILY] ??
+    FONT_FAMILY_FALLBACKS[family as keyof typeof FONT_FAMILY_FALLBACKS];
+
+  const registeredFamily = this.registered.get(fontFamily);
 
   if (!registeredFamily) {
-    this.registered.set(familyId, {
+    this.registered.set(fontFamily, {
       metadata,
       fontFaces: fontFacesDecriptors.map(
         ({ uri, descriptors }) =>

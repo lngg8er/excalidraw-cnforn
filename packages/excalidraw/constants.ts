@@ -135,19 +135,20 @@ export const FONT_FAMILY = {
   "Lilita One": 7,
   "Comic Shanns": 8,
   "Liberation Sans": 9,
-  // from here on fallback fonts only
-  [CHINESE_HANDWRITTEN_FALLBACK_FONT]: 1000,
-  [WINDOWS_EMOJI_FALLBACK_FONT]: 9999,
 };
 
-// TODO: perahaps could be specific per-family in the future
+/** Separated fallback families, not the mix them main ones  */
 export const FONT_FAMILY_FALLBACKS = {
-  STRING: `${CHINESE_HANDWRITTEN_FALLBACK_FONT}, ${WINDOWS_EMOJI_FALLBACK_FONT}`,
-  ARRAY: [
-    FONT_FAMILY[CHINESE_HANDWRITTEN_FALLBACK_FONT],
-    FONT_FAMILY[WINDOWS_EMOJI_FALLBACK_FONT],
-  ],
+  [CHINESE_HANDWRITTEN_FALLBACK_FONT]: 1000,
+  [WINDOWS_EMOJI_FALLBACK_FONT]: 10000,
 };
+
+// both of these could be in theory computed, though for such a small list it's just better to hardcode these
+export const FONT_FAMILY_FALLBACKS_STRING = `${CHINESE_HANDWRITTEN_FALLBACK_FONT}, ${WINDOWS_EMOJI_FALLBACK_FONT}`;
+export const FONT_FAMILY_FALLBACKS_ORDERED = [
+  FONT_FAMILY_FALLBACKS[CHINESE_HANDWRITTEN_FALLBACK_FONT],
+  FONT_FAMILY_FALLBACKS[WINDOWS_EMOJI_FALLBACK_FONT],
+];
 
 export const THEME = {
   LIGHT: "light",

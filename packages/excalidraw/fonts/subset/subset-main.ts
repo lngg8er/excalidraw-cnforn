@@ -74,7 +74,6 @@ const lazyLoadSharedSubsetChunk = async () => {
   return subsetShared;
 };
 
-// TODO_CHINESE: consider having this configurable (i.e. in case someone bundles whole thing into one chunk, including the worker code, it likely won't work)
 let shouldUseWorkers = typeof Worker !== "undefined";
 
 // TODO: could be extended with multiple commands in the future
@@ -97,6 +96,12 @@ const getOrCreateWorkerPool = (codePoints: Array<number>) => {
     workerPool = new Promise(async (resolve, reject) => {
       try {
         const { WorkerUrl } = await lazyLoadWorkerSubsetChunk();
+
+        if (WorkerUrl.toString() === import.meta.url.toString()) {
+          // in case the worker code is bundled into the main chunk
+          throw new Error("Worker has to be in a separate chunk!");
+        }
+
         const { Commands } = await lazyLoadSharedSubsetChunk();
 
         const pool = new WorkerPool<

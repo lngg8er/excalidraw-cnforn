@@ -4,7 +4,7 @@ import type { EVENT } from "./constants";
 import {
   DEFAULT_VERSION,
   FONT_FAMILY,
-  FONT_FAMILY_FALLBACKS,
+  FONT_FAMILY_FALLBACKS_STRING,
   isDarwin,
   WINDOWS_EMOJI_FALLBACK_FONT,
 } from "./constants";
@@ -91,7 +91,7 @@ export const getFontFamilyString = ({
   for (const [fontFamilyString, id] of Object.entries(FONT_FAMILY)) {
     if (id === fontFamily) {
       // TODO: we should fallback first to generic family names first
-      return `${fontFamilyString}, ${FONT_FAMILY_FALLBACKS.STRING}`;
+      return `${fontFamilyString}, ${FONT_FAMILY_FALLBACKS_STRING}`;
     }
   }
   return WINDOWS_EMOJI_FALLBACK_FONT;
