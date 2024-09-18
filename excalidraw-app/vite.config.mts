@@ -78,8 +78,8 @@ export default defineConfig({
       },
 
       workbox: {
-        // don't precache fonts, locales and shared chunks 
-        globIgnores: ["fonts.css", "**/locales/**", "service-worker.js", "**/*.shared-*.js"],
+        // don't precache fonts, locales and separate chunks 
+        globIgnores: ["fonts.css", "**/locales/**", "service-worker.js", "**/*.chunk-*.js"],
         runtimeCaching: [
           {
             urlPattern: new RegExp("/.+.(ttf|woff2|otf)"),
@@ -114,10 +114,10 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: new RegExp(".shared-.+.js"),
+            urlPattern: new RegExp(".chunk-.+.js"),
             handler: "CacheFirst",
             options: {
-              cacheName: "shared",
+              cacheName: "chunk",
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 90, // <== 90 days

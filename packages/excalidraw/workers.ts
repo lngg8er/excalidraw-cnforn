@@ -39,6 +39,9 @@ export class WorkerPool<T, R> {
     this.initWorker = options.initWorker;
   }
 
+  /**
+   * Takes idle worker from the pool or creates a new one and posts a message to it.
+   */
   public async postMessage(
     data: T,
     options: StructuredSerializeOptions,

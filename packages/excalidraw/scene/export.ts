@@ -534,22 +534,23 @@ function* fontFacesIterator(
 
     for (const [fontFaceIndex, fontFace] of fontFaces.entries()) {
       yield promiseTry(async () => {
-        const fontFaceCSS = await fontFace.toCSS(characters, codePoints);
+        try {
+          const fontFaceCSS = await fontFace.toCSS(characters, codePoints);
 
-        if (!fontFaceCSS) {
-          return;
+          if (!fontFaceCSS) {
+            return;
+          }
+
+          const fontFaceOrder = fontFamilyOrder + fontFaceIndex;
+          const fontFaceTuple = [fontFaceOrder, fontFaceCSS] as const;
+
+          return fontFaceTuple;
+        } catch (error) {
+          console.error(
+            `Couldn't transform font-face to css for family "${fontFace.fontFace.family}"`,
+            error,
+          );
         }
-
-        const fontFaceOrder = fontFamilyOrder + fontFaceIndex;
-        const fontFaceTuple = [fontFaceOrder, fontFaceCSS] as const;
-
-        return fontFaceTuple;
-      }).catch((error) => {
-        // handles all types of sync/async errors and just yields Promise<void>
-        console.error(
-          `Couldn't transform font-face to css for family "${fontFace.fontFace.family}"`,
-          error,
-        );
       });
     }
   }

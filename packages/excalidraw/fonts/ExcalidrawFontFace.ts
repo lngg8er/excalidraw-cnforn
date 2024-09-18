@@ -1,5 +1,5 @@
 import { LOCAL_FONT_PROTOCOL } from "./metadata";
-import { subsetWoff2GlyphsByCodepoints } from "./subset/subset.main";
+import { subsetWoff2GlyphsByCodepoints } from "./subset/subset-main";
 
 export interface IExcalidrawFontFace {
   urls: URL[];
