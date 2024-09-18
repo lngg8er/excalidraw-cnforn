@@ -44,19 +44,8 @@ export class ExcalidrawFontFace implements IExcalidrawFontFace {
     characters: string,
     codePoints: Array<number>,
   ): Promise<string> | undefined {
-    const unicodeRangeRegex = this.fontFace.unicodeRange
-      .split(", ")
-      .map((range) => {
-        const [start, end] = range.replace("U+", "").split("-");
-        if (end) {
-          return `\\u${start}-\\u${end}`;
-        }
-        return `\\u${start}`;
-      })
-      .join("");
-
-    if (!new RegExp(`[${unicodeRangeRegex}]`).test(characters)) {
-      // quick exit, so that this does not count as a pending promsie
+    // quick exit in case the characters are not within this font face's unicode range
+    if (!this.getUnicodeRangeRegex().test(characters)) {
       return;
     }
 
@@ -69,8 +58,6 @@ export class ExcalidrawFontFace implements IExcalidrawFontFace {
   /**
    * Tries to fetch woff2 content, based on the registered urls (from first to last, treated as fallbacks).
    *
-   * NOTE: assumes usage of `dataurl` outside the browser environment
-   *
    * @returns base64 with subsetted glyphs based on the passed codepoint, last defined url otherwise
    */
   public async getContent(codePoints: Array<number>): Promise<string> {
@@ -81,20 +68,6 @@ export class ExcalidrawFontFace implements IExcalidrawFontFace {
       const url = this.urls[i];
 
       try {
-        // it's dataurl (server), the font is inlined as base64, no need to fetch
-        if (url.protocol === "data:") {
-          const arrayBuffer = Buffer.from(
-            url.toString().split(",")[1],
-            "base64",
-          ).buffer;
-
-          const base64 = await subsetWoff2GlyphsByCodepoints(
-            arrayBuffer,
-            codePoints,
-          );
-          return base64;
-        }
-
         const response = await fetch(url, {
           headers: {
             Accept: "font/woff2",
@@ -132,6 +105,22 @@ export class ExcalidrawFontFace implements IExcalidrawFontFace {
     // in case of issues, at least return the last url as a content
     // defaults to unpkg for bundled fonts (so that we don't have to host them forever) and http url for others
     return this.urls.length ? this.urls[this.urls.length - 1].toString() : "";
+  }
+
+  private getUnicodeRangeRegex() {
+    // TODO: consider having actual unicode ranges for all the fonts or even splitting the exiting fonts based on the ranges
+    const ranges = this.fontFace.unicodeRange
+      .split(", ")
+      .map((range) => {
+        const [start, end] = range.replace("U+", "").split("-");
+        if (end) {
+          return `\\u${start}-\\u${end}`;
+        }
+        return `\\u${start}`;
+      })
+      .join("");
+
+    return new RegExp(`[${ranges}]`);
   }
 
   private static createUrls(uri: string): URL[] {

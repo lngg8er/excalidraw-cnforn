@@ -480,8 +480,9 @@ const getFontFaces = async (
     uniqueCodePoints,
   );
 
-  // don't trigger hundreds/thousands of concurrent requests, instead go three requests at a time, in a controlled manner
-  // in other words, does not block the main thread and avoids related issues, including potential rate limits
+  // don't trigger hundreds of concurrent requests (each performing fetch, creating a worker, etc.),
+  // instead go three requests at a time, in a controlled manner, without completely blocking the main thread
+  // and avoiding potential issues such as rate limits
   const concurrency = 3;
   const fontFaces = await new PromisePool(iterator, concurrency).all();
 
@@ -544,7 +545,7 @@ function* fontFacesIterator(
 
         return fontFaceTuple;
       }).catch((error) => {
-        // handle all types of sync/async errors and just yield undefined
+        // handles all types of sync/async errors and just yields Promise<void>
         console.error(
           `Couldn't transform font-face to css for family "${fontFace.fontFace.family}"`,
           error,

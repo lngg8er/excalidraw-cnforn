@@ -107,7 +107,7 @@ export const exportCanvas = async (
     throw new Error(t("alerts.cannotExportEmptyCanvas"));
   }
   if (type === "svg" || type === "clipboard-svg") {
-    const svgPromise = exportToSvg(
+    const svg = await exportToSvg(
       elements,
       {
         exportBackground,
@@ -119,22 +119,17 @@ export const exportCanvas = async (
       },
       files,
       { exportingFrame },
-    );
+    ).then((svg) => svg.outerHTML);
 
     if (type === "svg") {
-      return fileSave(
-        svgPromise.then((svg) => {
-          return new Blob([svg.outerHTML], { type: MIME_TYPES.svg });
-        }),
-        {
-          description: "Export to SVG",
-          name,
-          extension: appState.exportEmbedScene ? "excalidraw.svg" : "svg",
-          fileHandle,
-        },
-      );
+      const blob = new Blob([svg], { type: MIME_TYPES.svg });
+      return fileSave(blob, {
+        description: "Export to SVG",
+        name,
+        extension: appState.exportEmbedScene ? "excalidraw.svg" : "svg",
+        fileHandle,
+      });
     } else if (type === "clipboard-svg") {
-      const svg = await svgPromise.then((svg) => svg.outerHTML);
       try {
         await copyTextToSystemClipboard(svg);
       } catch (e) {
