@@ -4,7 +4,7 @@ import {
   loadFromFirebase,
   saveFilesToFirebase,
   saveToFirebase,
-} from "../../../Desktop/excalidraw-0.17.3-fork-b1/excalidraw-app/data/firebase";
+} from "../../excalidraw-app/data/firebase";
 import {
   isSavedToHttpStorage,
   loadFilesFromHttpStorage,

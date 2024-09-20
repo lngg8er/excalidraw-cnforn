@@ -1,22 +1,22 @@
 // Inspired and partly copied from https://gitlab.com/kiliandeca/excalidraw-fork
 // MIT, Kilian Decaderincourt
 
-import { getSyncableElements, SyncableExcalidrawElement } from "../../../Desktop/excalidraw-0.17.3-fork-b1/excalidraw-app/data";
-import { MIME_TYPES } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/constants";
-import { decompressData } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/data/encode";
-import { encryptData, IV_LENGTH_BYTES } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/data/encryption";
-import { restoreElements } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/data/restore";
-import { getSceneVersion } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/element";
-import { ExcalidrawElement, FileId } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/element/types";
+import { getSyncableElements, SyncableExcalidrawElement } from "../../excalidraw-app/data";
+import { MIME_TYPES } from "../../src/constants";
+import { decompressData } from "../../src/data/encode";
+import { encryptData, IV_LENGTH_BYTES } from "../../src/data/encryption";
+import { restoreElements } from "../../src/data/restore";
+import { getSceneVersion } from "../../src/element";
+import { ExcalidrawElement, FileId } from "../../src/element/types";
 import {
   AppState,
   BinaryFileData,
   BinaryFileMetadata,
   DataURL,
-} from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/types";
-import Portal from "../../../Desktop/excalidraw-0.17.3-fork-b1/excalidraw-app/collab/Portal";
-import { reconcileElements } from "../../../Desktop/excalidraw-0.17.3-fork-b1/excalidraw-app/collab/reconciliation";
-import { decryptData } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/data/encryption";
+} from "../../src/types";
+import Portal from "../../excalidraw-app/collab/Portal";
+import { reconcileElements } from "../../excalidraw-app/collab/reconciliation";
+import { decryptData } from "../../src/data/encryption";
 import { StoredScene } from "./StorageBackend";
 
 const HTTP_STORAGE_BACKEND_URL = import.meta.env

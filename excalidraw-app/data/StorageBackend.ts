@@ -1,7 +1,7 @@
-import { SyncableExcalidrawElement } from "../../../Desktop/excalidraw-0.17.3-fork-b1/excalidraw-app/data";
-import { ExcalidrawElement, FileId } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/element/types";
-import { AppState, BinaryFileData } from "../../../Desktop/excalidraw-0.17.3-fork-b1/src/types";
-import Portal from "../../../Desktop/excalidraw-0.17.3-fork-b1/excalidraw-app/collab/Portal";
+import { SyncableExcalidrawElement } from "../../excalidraw-app/data";
+import { ExcalidrawElement, FileId } from "../../src/element/types";
+import { AppState, BinaryFileData } from "../../src/types";
+import Portal from "../../excalidraw-app/collab/Portal";
 
 export interface StorageBackend {
   isSaved: (portal: Portal, elements: readonly ExcalidrawElement[]) => boolean;
