@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "../../src/components/Card";
 import { ToolButton } from "../../src/components/ToolButton";
 import { serializeAsJSON } from "../../src/data/json";
-import { loadFirebaseStorage, saveFilesToFirebase } from "../data/firebase";
+import { loadFirebaseStorage } from "../data/firebase";
 import { FileId, NonDeletedExcalidrawElement } from "../../src/element/types";
 import { AppState, BinaryFileData, BinaryFiles } from "../../src/types";
 import { nanoid } from "nanoid";
@@ -15,6 +15,7 @@ import { MIME_TYPES } from "../../src/constants";
 import { trackEvent } from "../../src/analytics";
 import { getFrame } from "../../src/utils";
 import { ExcalidrawLogo } from "../../src/components/ExcalidrawLogo";
+import { getStorageBackend } from "../data/config";
 
 export const exportToExcalidrawPlus = async (
   elements: readonly NonDeletedExcalidrawElement[],
@@ -62,7 +63,8 @@ export const exportToExcalidrawPlus = async (
       maxBytes: FILE_UPLOAD_MAX_BYTES,
     });
 
-    await saveFilesToFirebase({
+    const storageBackend = await getStorageBackend();
+    await storageBackend.saveFilesToStorageBackend({
       prefix: `/migrations/files/scenes/${id}`,
       files: filesToUpload,
     });
