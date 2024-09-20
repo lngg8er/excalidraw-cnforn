@@ -13,6 +13,7 @@ interface Document {
 
 interface Window {
   ClipboardItem: any;
+  _env_: any | undefined;
   __EXCALIDRAW_SHA__: string | undefined;
   EXCALIDRAW_ASSET_PATH: string | undefined;
   EXCALIDRAW_EXPORT_SOURCE: string;
