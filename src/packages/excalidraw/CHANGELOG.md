@@ -1466,7 +1466,7 @@ Check out the [release notes](https://github.com/excalidraw/excalidraw/releases/
 ### Features
 
 - Add export info on copy PNG to clipboard toast message [#3159](https://github.com/excalidraw/excalidraw/pull/3159).
-- Use the latest version of Virgil [#3124](https://github.com/excalidraw/excalidraw/pull/3124).
+- Use the latest version of Qingmei [#3124](https://github.com/excalidraw/excalidraw/pull/3124).
 - Support exporting with dark mode [#3046](https://github.com/excalidraw/excalidraw/pull/3046).
 
 ### Fixes
